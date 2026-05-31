@@ -1,0 +1,43 @@
+# Binaries
+fw-app
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test coverage
+coverage.txt
+*.out
+
+# Go workspace
+*.work
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+
+# Data
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# UI build artifacts
+ui/node_modules/
+ui/dist/
+ui/.svelte-kit/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+*.tmp
+*.log
