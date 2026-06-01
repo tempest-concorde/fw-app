@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    name: Semantic Release
+    uses: tempest-concorde/fw-cicd/.github/workflows/semantic-release.yml@main
+    with:
+      use_local_config: false
+
+  build:
+    name: Build and push container
+    needs: release
+    if: needs.release.outputs.new_release_published == 'true'
+    uses: tempest-concorde/fw-cicd/.github/workflows/build-container.yml@main
+    with:
+      registry: ghcr.io
+      image_name: tempest-concorde/fw-app
+      platform: linux/arm64
+      containerfile: Containerfile
+      push: true
+      tags: ${{ needs.release.outputs.new_release_version }} latest
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sign:
+    name: Sign container image
+    needs: [release, build]
+    if: needs.release.outputs.new_release_published == 'true'
+    uses: tempest-concorde/fw-cicd/.github/workflows/cosign-sign-verify.yml@main
+    with:
+      registry: ghcr.io
+      image_name: tempest-concorde/fw-app
+      image_digest: ${{ needs.build.outputs.digest }}
+      version: ${{ needs.release.outputs.new_release_version }}
+      signing_mode: key
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
