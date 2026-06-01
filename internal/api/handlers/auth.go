@@ -40,8 +40,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		600, // 10 minutes
 		"/",
 		"",
-		false, // Secure in production
-		true,  // HttpOnly
+		true, // Always Secure - use HTTPS even in development
+		true, // HttpOnly
 	)
 
 	c.Redirect(http.StatusFound, url)

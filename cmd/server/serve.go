@@ -118,10 +118,10 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	// Create router
 	router := api.NewRouter(api.RouterConfig{
-		DB:          db,
-		GitHubAuth:  githubAuth,
-		JWTManager:  jwtManager,
-		AuditWriter: auditWriter,
+		DB:             db,
+		GitHubAuth:     githubAuth,
+		JWTManager:     jwtManager,
+		AuditWriter:    auditWriter,
 		SwaggerEnabled: cfg.Swagger.Enabled,
 	})
 

@@ -2,9 +2,9 @@ package auth
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
-	"math/rand"
-	"time"
 
 	"github.com/google/go-github/v69/github"
 	"golang.org/x/oauth2"
@@ -95,11 +95,10 @@ func (g *GitHubAuth) HandleCallback(ctx context.Context, code string) (*GitHubUs
 }
 
 func generateRandomState() string {
-	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	b := make([]byte, 32)
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := range b {
-		b[i] = letters[r.Intn(len(letters))]
+	if _, err := rand.Read(b); err != nil {
+		// crypto/rand failure is catastrophic - OAuth cannot proceed safely
+		panic(fmt.Sprintf("crypto/rand.Read failed: %v", err))
 	}
-	return string(b)
+	return base64.RawURLEncoding.EncodeToString(b)
 }

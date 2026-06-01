@@ -1,0 +1,134 @@
+run:
+  timeout: 5m
+  go: "1.25"
+
+linters:
+  enable:
+    # Security
+    - gosec         # Security scanner (catches crypto/rand, SQL injection, etc.)
+
+    # Style & Quality
+    - gocritic      # Opinionated Go style and correctness checks
+    - revive        # Replacement for deprecated golint
+    - stylecheck    # Checks for Go style guide compliance
+
+    # Error Handling
+    - errorlint     # Proper error wrapping with %w
+    - nilerr        # Detects returning nil error with non-nil error check
+
+    # Maintainability
+    - goconst       # Repeated string literals that could be constants
+    - misspell      # Typos in comments and strings
+    - unconvert     # Unnecessary type conversions
+    - unparam       # Unused function parameters
+
+    # Correctness
+    - bodyclose     # Unclosed HTTP response bodies
+    - exhaustive    # Exhaustive enum switch statements
+    - noctx         # HTTP requests without context
+
+    # Defaults (already enabled, listed for clarity):
+    # - staticcheck
+    # - govet
+    # - errcheck
+    # - ineffassign
+    # - unused
+    # - typecheck
+
+linters-settings:
+  gosec:
+    severity: medium
+    confidence: medium
+    excludes:
+      - G104 # Unhandled errors - errcheck covers this better
+
+  gocritic:
+    enabled-checks:
+      - appendAssign
+      - boolExprSimplify
+      - builtinShadow
+      - commentFormatting
+      - defaultCaseOrder
+      - dupImport
+      - emptyFallthrough
+      - emptyStringTest
+      - equalFold
+      - hexLiteral
+      - indexAlloc
+      - initClause
+      - methodExprCall
+      - nilValReturn
+      - rangeExprCopy
+      - rangeValCopy
+      - singleCaseSwitch
+      - sloppyLen
+      - stringXbytes
+      - typeAssertChain
+      - underef
+      - unlabelStmt
+      - unslice
+      - yodaStyleExpr
+
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+        disabled: false
+      - name: package-comments
+        severity: warning
+        disabled: false
+      - name: context-as-argument
+        severity: warning
+        disabled: false
+      - name: error-return
+        severity: warning
+        disabled: false
+      - name: error-strings
+        severity: warning
+        disabled: false
+      - name: error-naming
+        severity: warning
+        disabled: false
+      - name: indent-error-flow
+        severity: warning
+        disabled: false
+      - name: if-return
+        severity: warning
+        disabled: false
+      - name: var-naming
+        severity: warning
+        disabled: false
+      - name: var-declaration
+        severity: warning
+        disabled: false
+      - name: unexported-return
+        severity: warning
+        disabled: false
+
+  errorlint:
+    errorf: true
+    asserts: true
+    comparison: true
+
+issues:
+  exclude-use-default: false
+  max-same-issues: 0
+
+  # Exclude specific false positives
+  exclude-rules:
+    # Allow embedding interfaces in test files
+    - path: _test\.go
+      linters:
+        - gocritic
+      text: "commentFormatting"
+
+    # Exclude some revive checks for generated code
+    - path: docs/  # Swagger generated
+      linters:
+        - revive
+        - stylecheck
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true

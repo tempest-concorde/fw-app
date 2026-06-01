@@ -9,6 +9,10 @@ jobs:
     name: Lint PR title
     uses: tempest-concorde/fw-cicd/.github/workflows/commitlint.yml@main
 
+  quality:
+    name: Go quality gates
+    uses: tempest-concorde/fw-cicd/.github/workflows/go-quality.yml@main
+
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -22,9 +26,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Run tests
-        run: |
-          go test -race -count=1 -coverprofile=coverage.out ./...
-          go vet ./...
+        run: go test -race -count=1 -coverprofile=coverage.out ./...
 
       - name: Upload coverage
         uses: codecov/codecov-action@1e68e06f1dbfde0e4cefc87efeba9e4643565303  # v5.3.1

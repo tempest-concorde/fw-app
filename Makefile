@@ -1,4 +1,4 @@
-.PHONY: help build test test-integration lint lint-fix run run-dev clean swagger swagger-check verify
+.PHONY: help build test test-integration lint lint-fix fmt-check run run-dev clean swagger swagger-check verify
 
 # Variables
 BINARY_NAME=fw-app
@@ -16,7 +16,8 @@ help:
 	@echo "  test-integration Run integration tests"
 	@echo "  lint             Run golangci-lint"
 	@echo "  lint-fix         Run golangci-lint with auto-fix"
-	@echo "  verify           Run all verification checks (lint + swagger-check)"
+	@echo "  fmt-check        Check code formatting with gofmt"
+	@echo "  verify           Run all verification checks (fmt-check + lint + swagger-check)"
 	@echo "  swagger          Generate Swagger documentation"
 	@echo "  swagger-check    Verify Swagger docs are up to date"
 	@echo "  run              Run the application locally"
@@ -37,12 +38,17 @@ swagger-check:
 	@rm -rf .tmp-swagger
 	@echo "✅ Swagger docs are up to date"
 
-verify: lint swagger-check
+fmt-check:
+	@echo "Checking code formatting..."
+	@test -z "$$(gofmt -l .)" || (echo "❌ The following files need formatting:" && gofmt -l . && exit 1)
+	@echo "✅ All Go files are properly formatted"
+
+verify: fmt-check lint swagger-check
 	@echo "✅ All verification checks passed"
 
 build: swagger
 	@echo "Building $(BINARY_NAME)..."
-	CGO_ENABLED=1 $(GO) build -o $(BINARY_NAME) $(MAIN_PATH)
+	CGO_ENABLED=0 $(GO) build -o $(BINARY_NAME) $(MAIN_PATH)
 	@echo "✅ Built: $(BINARY_NAME)"
 
 test:

@@ -24,7 +24,7 @@ type RouterConfig struct {
 // NewRouter creates and configures the Gin router
 func NewRouter(cfg RouterConfig) *gin.Engine {
 	logger := slog.Default()
-	
+
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 
