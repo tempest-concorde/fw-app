@@ -1,0 +1,14 @@
+name: Block IDE/agent config directories
+on: [pull_request, push]
+jobs:
+  block-ide-dirs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject .vscode and .claude directories
+        run: |
+          if git ls-files .vscode .claude | grep -q .; then
+            echo "::error::Supply chain risk: .vscode/ or .claude/ files must not be committed"
+            git ls-files .vscode .claude
+            exit 1
+          fi
