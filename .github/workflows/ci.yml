@@ -27,3 +27,20 @@ jobs:
 
       - name: Run tests
         run: go test -race -count=1 -coverprofile=coverage.out ./...
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@1e68e06f1dbfde0e4cefc87efeba9e4643565303  # v5.3.1
+        with:
+          files: ./coverage.out
+          flags: unittests
+
+  build-check:
+    name: Build container (no push)
+    uses: tempest-concorde/fw-cicd/.github/workflows/build-container.yml@main
+    with:
+      registry: ghcr.io
+      image_name: tempest-concorde/fw-app
+      platform: linux/arm64
+      containerfile: Containerfile
+      push: false
+    secrets: inherit
