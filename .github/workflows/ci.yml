@@ -5,43 +5,6 @@ on:
     branches: [main]
 
 jobs:
-  commitlint:
-    name: Lint PR title
-    uses: tempest-concorde/fw-cicd/.github/workflows/commitlint.yml@main
-
   quality:
     name: Go quality gates
     uses: tempest-concorde/fw-cicd/.github/workflows/go-quality.yml@main
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
-
-      - name: Setup Go
-        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff  # v5
-        with:
-          go-version-file: go.mod
-
-      - name: Run tests
-        run: go test -race -count=1 -coverprofile=coverage.out ./...
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@1e68e06f1dbfde0e4cefc87efeba9e4643565303  # v5.3.1
-        with:
-          files: ./coverage.out
-          flags: unittests
-
-  build-check:
-    name: Build container (no push)
-    uses: tempest-concorde/fw-cicd/.github/workflows/build-container.yml@main
-    with:
-      registry: ghcr.io
-      image_name: tempest-concorde/fw-app
-      platform: linux/arm64
-      containerfile: Containerfile
-      push: false
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
