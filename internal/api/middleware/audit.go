@@ -17,6 +17,11 @@ import (
 // (set by the Auth middleware) and writing a CloudEvents audit event.
 func Audit(writer *audit.Writer) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if writer == nil {
+			c.Next()
+			return
+		}
+
 		// Only audit state-changing methods
 		method := c.Request.Method
 		if method != http.MethodPost && method != http.MethodPut && method != http.MethodDelete {

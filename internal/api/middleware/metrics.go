@@ -47,9 +47,8 @@ func Metrics() gin.HandlerFunc {
 		method := c.Request.Method
 		pathTemplate := c.FullPath()
 
-		// Use actual path if no route matched (404s, etc.)
 		if pathTemplate == "" {
-			pathTemplate = c.Request.URL.Path
+			pathTemplate = "unmatched"
 		}
 
 		// Record metrics

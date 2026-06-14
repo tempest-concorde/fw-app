@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -125,7 +126,7 @@ func (h *SampleHandler) GetSample(c *gin.Context) {
 
 	sample := new(models.Sample)
 	if err := h.db.NewSelect().Model(sample).Where("id = ?", id).Scan(ctx); err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "sample not found"})
 			return
 		}
@@ -170,7 +171,7 @@ func (h *SampleHandler) UpdateSample(c *gin.Context) {
 
 	sample := new(models.Sample)
 	if err := h.db.NewSelect().Model(sample).Where("id = ?", id).Scan(ctx); err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "sample not found"})
 			return
 		}

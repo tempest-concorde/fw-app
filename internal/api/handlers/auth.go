@@ -102,7 +102,7 @@ func (h *AuthHandler) Callback(c *gin.Context) {
 	)
 
 	// Clear state cookie
-	c.SetCookie("oauth_state", "", -1, "/", "", false, true)
+	c.SetCookie("oauth_state", "", -1, "/", "", true, true)
 
 	c.Redirect(http.StatusFound, "/app")
 }
