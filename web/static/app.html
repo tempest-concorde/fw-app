@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Wall - App</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome, <span id="username">User</span></h1>
+
+        <div class="auth-section">
+            <button onclick="logout()" class="btn btn-danger">Logout</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Test API</h2>
+            <div class="button-group">
+                <button onclick="listSamples()" class="btn">List Samples</button>
+                <button onclick="createSample()" class="btn">Create Sample</button>
+                <button onclick="getSample()" class="btn">Get Sample #1</button>
+                <button onclick="updateSample()" class="btn">Update Sample #1</button>
+                <button onclick="deleteSample()" class="btn btn-danger">Delete Sample #1</button>
+            </div>
+            <div id="response" class="response"></div>
+        </div>
+    </div>
+
+    <script>
+        function parseJWT(cookieName) {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === cookieName) {
+                    try {
+                        const payload = value.split('.')[1];
+                        const decoded = JSON.parse(atob(payload));
+                        return decoded;
+                    } catch (error) {
+                        console.error('Failed to parse JWT:', error);
+                        return null;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function initUser() {
+            const jwt = parseJWT('token');
+            if (jwt && jwt.username) {
+                document.getElementById('username').textContent = jwt.username;
+            } else {
+                window.location.href = '/';
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/auth/logout', { method: 'POST' });
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+            window.location.href = '/';
+        }
+
+        const responseDiv = document.getElementById('response');
+
+        function displayResponse(status, data) {
+            responseDiv.innerHTML = `
+                <div class="status">Status: ${status}</div>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        }
+
+        async function makeRequest(method, url, body = null) {
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                };
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+
+                const response = await fetch(url, options);
+                const data = await response.json();
+
+                if (response.status === 401) {
+                    displayResponse(response.status, { error: 'Unauthorized - Please login' });
+                } else {
+                    displayResponse(response.status, data);
+                }
+            } catch (error) {
+                displayResponse('Error', { error: error.message });
+            }
+        }
+
+        function listSamples() {
+            makeRequest('GET', '/api/samples');
+        }
+
+        function createSample() {
+            makeRequest('POST', '/api/samples', {
+                name: 'Test Sample',
+                description: 'Created from web UI'
+            });
+        }
+
+        function getSample() {
+            makeRequest('GET', '/api/samples/1');
+        }
+
+        function updateSample() {
+            makeRequest('PUT', '/api/samples/1', {
+                name: 'Updated Sample',
+                description: 'Updated from web UI'
+            });
+        }
+
+        function deleteSample() {
+            makeRequest('DELETE', '/api/samples/1');
+        }
+
+        initUser();
+    </script>
+</body>
+</html>

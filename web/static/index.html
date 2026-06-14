@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Wall</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Flight Wall</h1>
+
+        <div class="auth-section">
+            <a href="/auth/login" class="btn btn-primary">Login with GitHub</a>
+        </div>
+
+        <div class="test-section">
+            <h2>Test API</h2>
+            <div class="button-group">
+                <button onclick="listSamples()" class="btn">List Samples</button>
+                <button onclick="createSample()" class="btn">Create Sample</button>
+                <button onclick="getSample()" class="btn">Get Sample #1</button>
+                <button onclick="updateSample()" class="btn">Update Sample #1</button>
+                <button onclick="deleteSample()" class="btn btn-danger">Delete Sample #1</button>
+            </div>
+            <div id="response" class="response"></div>
+        </div>
+    </div>
+
+    <script>
+        const responseDiv = document.getElementById('response');
+
+        function displayResponse(status, data) {
+            responseDiv.innerHTML = `
+                <div class="status">Status: ${status}</div>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        }
+
+        async function makeRequest(method, url, body = null) {
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                };
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+
+                const response = await fetch(url, options);
+                const data = await response.json();
+
+                if (response.status === 401) {
+                    displayResponse(response.status, { error: 'Unauthorized - Please login' });
+                } else {
+                    displayResponse(response.status, data);
+                }
+            } catch (error) {
+                displayResponse('Error', { error: error.message });
+            }
+        }
+
+        function listSamples() {
+            makeRequest('GET', '/api/samples');
+        }
+
+        function createSample() {
+            makeRequest('POST', '/api/samples', {
+                name: 'Test Sample',
+                description: 'Created from web UI'
+            });
+        }
+
+        function getSample() {
+            makeRequest('GET', '/api/samples/1');
+        }
+
+        function updateSample() {
+            makeRequest('PUT', '/api/samples/1', {
+                name: 'Updated Sample',
+                description: 'Updated from web UI'
+            });
+        }
+
+        function deleteSample() {
+            makeRequest('DELETE', '/api/samples/1');
+        }
+    </script>
+</body>
+</html>
