@@ -14,5 +14,4 @@ jobs:
       platform: linux/amd64
       containerfile: Containerfile
       push: false
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    secrets: inherit
