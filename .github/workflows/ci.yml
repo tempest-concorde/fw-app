@@ -11,7 +11,4 @@ jobs:
     with:
       registry: ghcr.io
       image_name: tempest-concorde/fw-app
-      platform: linux/amd64
-      containerfile: Containerfile
-      push: false
     secrets: inherit
