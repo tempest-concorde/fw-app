@@ -7,11 +7,11 @@ on:
 jobs:
   commitlint:
     name: Lint PR title
-    uses: tempest-concorde/fw-cicd/.github/workflows/commitlint.yml@main
+    uses: tempest-concorde/fw-cicd/.github/workflows/commitlint.yml@385ab0ec2b22d72565516d3899f607bf93e93bc0
 
   quality:
     name: Go quality gates
-    uses: tempest-concorde/fw-cicd/.github/workflows/go-quality.yml@main
+    uses: tempest-concorde/fw-cicd/.github/workflows/go-quality.yml@385ab0ec2b22d72565516d3899f607bf93e93bc0
 
   test:
     name: Test
@@ -36,7 +36,7 @@ jobs:
 
   build-check:
     name: Build container (no push)
-    uses: tempest-concorde/fw-cicd/.github/workflows/build-container.yml@main
+    uses: tempest-concorde/fw-cicd/.github/workflows/build-container.yml@385ab0ec2b22d72565516d3899f607bf93e93bc0
     with:
       registry: ghcr.io
       image_name: tempest-concorde/fw-app
