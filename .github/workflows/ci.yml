@@ -10,3 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "CI works"
+
+  commitlint:
+    name: Lint PR title
+    uses: tempest-concorde/fw-cicd/.github/workflows/commitlint.yml@main
