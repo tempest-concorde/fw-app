@@ -1,8 +1,7 @@
 # Flight Wall Application - Multi-stage Go Build
-# Uses Red Hat Hardened Images for build and runtime
 
-# Build stage - Red Hat Hardened Go builder
-FROM registry.access.redhat.com/hi/go:latest AS builder
+# Build stage
+FROM docker.io/library/golang:1.25-bookworm AS builder
 
 WORKDIR /src
 
@@ -16,8 +15,8 @@ COPY . .
 # Build with CGO disabled (using pure Go modernc.org/sqlite)
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /tmp/fw-app ./cmd/server
 
-# Runtime stage - Red Hat Hardened core-runtime
-FROM registry.access.redhat.com/hi/core-runtime:latest
+# Runtime stage - Red Hat UBI micro (publicly available)
+FROM registry.access.redhat.com/ubi9-micro:latest
 
 # Metadata
 LABEL org.opencontainers.image.title="Flight Wall Application"
