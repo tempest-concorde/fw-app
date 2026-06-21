@@ -1,6 +1,6 @@
 module github.com/tempest-concorde/fw-app
 
-go 1.25.0
+go 1.25.10
 
 require (
 	github.com/cloudevents/sdk-go/v2 v2.16.2
