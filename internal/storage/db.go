@@ -70,7 +70,11 @@ func (db *DB) Init(ctx context.Context) error {
 	if err := db.migrator.Lock(ctx); err != nil {
 		return fmt.Errorf("failed to lock migrator: %w", err)
 	}
-	defer db.migrator.Unlock(ctx)
+	defer func() {
+		if unlockErr := db.migrator.Unlock(ctx); unlockErr != nil {
+			fmt.Fprintf(os.Stderr, "failed to unlock migrator: %v\n", unlockErr)
+		}
+	}()
 
 	group, err := db.migrator.Migrate(ctx)
 	if err != nil {

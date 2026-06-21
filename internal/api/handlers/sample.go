@@ -13,6 +13,12 @@ import (
 	"github.com/uptrace/bun"
 )
 
+const (
+	keyError         = "error"
+	msgInvalidID     = "invalid ID"
+	msgSampleNotFound = "sample not found"
+)
+
 // SampleHandler handles CRUD operations for samples
 type SampleHandler struct {
 	db *bun.DB
@@ -54,7 +60,7 @@ func (h *SampleHandler) ListSamples(c *gin.Context) {
 
 	var samples []models.Sample
 	if err := h.db.NewSelect().Model(&samples).Scan(ctx); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch samples"})
+		c.JSON(http.StatusInternalServerError, gin.H{keyError: "failed to fetch samples"})
 		return
 	}
 
@@ -77,7 +83,7 @@ func (h *SampleHandler) ListSamples(c *gin.Context) {
 func (h *SampleHandler) CreateSample(c *gin.Context) {
 	var req CreateSampleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{keyError: err.Error()})
 		return
 	}
 
@@ -92,7 +98,7 @@ func (h *SampleHandler) CreateSample(c *gin.Context) {
 	}
 
 	if _, err := h.db.NewInsert().Model(sample).Exec(ctx); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create sample"})
+		c.JSON(http.StatusInternalServerError, gin.H{keyError: "failed to create sample"})
 		return
 	}
 
@@ -117,7 +123,7 @@ func (h *SampleHandler) GetSample(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{keyError: msgInvalidID})
 		return
 	}
 
@@ -127,10 +133,10 @@ func (h *SampleHandler) GetSample(c *gin.Context) {
 	sample := new(models.Sample)
 	if err := h.db.NewSelect().Model(sample).Where("id = ?", id).Scan(ctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "sample not found"})
+			c.JSON(http.StatusNotFound, gin.H{keyError: msgSampleNotFound})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch sample"})
+		c.JSON(http.StatusInternalServerError, gin.H{keyError: "failed to fetch sample"})
 		return
 	}
 
@@ -156,13 +162,13 @@ func (h *SampleHandler) UpdateSample(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{keyError: msgInvalidID})
 		return
 	}
 
 	var req UpdateSampleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{keyError: err.Error()})
 		return
 	}
 
@@ -172,10 +178,10 @@ func (h *SampleHandler) UpdateSample(c *gin.Context) {
 	sample := new(models.Sample)
 	if err := h.db.NewSelect().Model(sample).Where("id = ?", id).Scan(ctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "sample not found"})
+			c.JSON(http.StatusNotFound, gin.H{keyError: msgSampleNotFound})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch sample"})
+		c.JSON(http.StatusInternalServerError, gin.H{keyError: "failed to fetch sample"})
 		return
 	}
 
@@ -188,7 +194,7 @@ func (h *SampleHandler) UpdateSample(c *gin.Context) {
 	sample.UpdatedAt = time.Now()
 
 	if _, err := h.db.NewUpdate().Model(sample).WherePK().Exec(ctx); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update sample"})
+		c.JSON(http.StatusInternalServerError, gin.H{keyError: "failed to update sample"})
 		return
 	}
 
@@ -213,7 +219,7 @@ func (h *SampleHandler) DeleteSample(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{keyError: msgInvalidID})
 		return
 	}
 
@@ -222,18 +228,18 @@ func (h *SampleHandler) DeleteSample(c *gin.Context) {
 
 	result, err := h.db.NewDelete().Model((*models.Sample)(nil)).Where("id = ?", id).Exec(ctx)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete sample"})
+		c.JSON(http.StatusInternalServerError, gin.H{keyError: "failed to delete sample"})
 		return
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to verify deletion"})
+		c.JSON(http.StatusInternalServerError, gin.H{keyError: "failed to verify deletion"})
 		return
 	}
 
 	if rowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "sample not found"})
+		c.JSON(http.StatusNotFound, gin.H{keyError: msgSampleNotFound})
 		return
 	}
 

@@ -26,11 +26,17 @@ var serveCmd = &cobra.Command{
 }
 
 func runServe(cmd *cobra.Command, args []string) {
+	if err := runServeMain(); err != nil {
+		slog.Error("fatal error", "error", err)
+		os.Exit(1)
+	}
+}
+
+func runServeMain() error {
 	// Load configuration
 	cfg, err := config.Load(cfgFile)
 	if err != nil {
-		slog.Error("failed to load configuration", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
 	// Setup structured logging
@@ -47,21 +53,20 @@ func runServe(cmd *cobra.Command, args []string) {
 	case "error":
 		logLevelVar.Set(slog.LevelError)
 	default:
-		fmt.Fprintf(os.Stderr, "invalid log level: %s (must be debug, info, warn, or error)\n", logLevel)
-		os.Exit(1)
+		return fmt.Errorf("invalid log level: %s (must be debug, info, warn, or error)", logLevel)
 	}
 
-	if logFormat == "json" {
+	switch logFormat {
+	case "json":
 		logHandler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 			Level: &logLevelVar,
 		})
-	} else if logFormat == "text" {
+	case "text":
 		logHandler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 			Level: &logLevelVar,
 		})
-	} else {
-		fmt.Fprintf(os.Stderr, "invalid log format: %s (must be json or text)\n", logFormat)
-		os.Exit(1)
+	default:
+		return fmt.Errorf("invalid log format: %s (must be json or text)", logFormat)
 	}
 
 	logger := slog.New(logHandler)
@@ -79,16 +84,14 @@ func runServe(cmd *cobra.Command, args []string) {
 		Development: logLevel == "debug",
 	})
 	if err != nil {
-		logger.Error("failed to open database", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to open database: %w", err)
 	}
 	defer db.Close()
 
 	// Run migrations
 	ctx := context.Background()
 	if err := db.Init(ctx); err != nil {
-		logger.Error("failed to run database migrations", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to run database migrations: %w", err)
 	}
 
 	// Create audit writer
@@ -96,8 +99,7 @@ func runServe(cmd *cobra.Command, args []string) {
 	if cfg.Audit.Enabled {
 		auditWriter, err = audit.NewWriter(cfg.Audit.LogPath)
 		if err != nil {
-			logger.Error("failed to create audit writer", "error", err)
-			os.Exit(1)
+			return fmt.Errorf("failed to create audit writer: %w", err)
 		}
 		defer auditWriter.Close()
 		logger.Info("audit logging enabled", "path", cfg.Audit.LogPath)
@@ -135,8 +137,7 @@ func runServe(cmd *cobra.Command, args []string) {
 		TLSKeyFile:  cfg.TLS.KeyFile,
 	})
 	if err != nil {
-		logger.Error("failed to create server", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to create server: %w", err)
 	}
 
 	// Start server in goroutine
@@ -157,8 +158,7 @@ func runServe(cmd *cobra.Command, args []string) {
 	// Wait for shutdown signal or server error
 	select {
 	case err := <-serverErrors:
-		logger.Error("server error", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("server error: %w", err)
 	case <-ctx.Done():
 		logger.Info("shutdown signal received, starting graceful shutdown")
 	}
@@ -168,9 +168,9 @@ func runServe(cmd *cobra.Command, args []string) {
 	defer shutdownCancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		logger.Error("server shutdown failed", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("server shutdown failed: %w", err)
 	}
 
 	logger.Info("server shutdown complete")
+	return nil
 }

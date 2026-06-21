@@ -12,6 +12,11 @@ import (
 	"github.com/tempest-concorde/fw-app/internal/audit"
 )
 
+const (
+	keyMethod = "method"
+	keyStatus = "status"
+)
+
 // Audit returns a Gin middleware that creates audit trail entries for state-changing requests.
 // It only audits POST, PUT, and DELETE requests, extracting user information from the context
 // (set by the Auth middleware) and writing a CloudEvents audit event.
@@ -64,9 +69,9 @@ func Audit(writer *audit.Writer) gin.HandlerFunc {
 
 		// Build audit event data
 		auditData := map[string]interface{}{
-			"method": method,
-			"path":   c.Request.URL.Path,
-			"status": status,
+			keyMethod: method,
+			"path":    c.Request.URL.Path,
+			keyStatus: status,
 		}
 
 		if requestBody != nil {
