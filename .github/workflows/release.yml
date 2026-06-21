@@ -23,8 +23,7 @@ jobs:
       containerfile: Containerfile
       push: true
       tags: ${{ needs.release.outputs.new_release_version }} latest
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    secrets: inherit
 
   sign:
     name: Sign container image
@@ -37,7 +36,4 @@ jobs:
       image_digest: ${{ needs.build.outputs.digest }}
       version: ${{ needs.release.outputs.new_release_version }}
       signing_mode: key
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+    secrets: inherit
