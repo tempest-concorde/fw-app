@@ -12,6 +12,8 @@ jobs:
   quality:
     name: Go quality gates
     uses: tempest-concorde/fw-cicd/.github/workflows/go-quality.yml@main
+    with:
+      golangci_lint_version: v2.12
 
   test:
     name: Test
