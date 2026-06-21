@@ -68,25 +68,25 @@ type CallbackRequest struct {
 func (h *AuthHandler) Callback(c *gin.Context) {
 	var req CallbackRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing code or state"})
+		c.JSON(http.StatusBadRequest, gin.H{keyError: "missing code or state"})
 		return
 	}
 
 	storedState, err := c.Cookie("oauth_state")
 	if err != nil || storedState != req.State {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid state parameter"})
+		c.JSON(http.StatusUnauthorized, gin.H{keyError: "invalid state parameter"})
 		return
 	}
 
 	user, err := h.githubAuth.HandleCallback(c.Request.Context(), req.Code)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication failed"})
+		c.JSON(http.StatusUnauthorized, gin.H{keyError: "authentication failed"})
 		return
 	}
 
 	token, err := h.jwtManager.GenerateToken(user.Login, user.Login, user.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+		c.JSON(http.StatusInternalServerError, gin.H{keyError: "failed to generate token"})
 		return
 	}
 

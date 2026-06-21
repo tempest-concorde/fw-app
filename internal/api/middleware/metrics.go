@@ -9,6 +9,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+const (
+	labelMethod       = "method"
+	labelPathTemplate = "path_template"
+	labelStatus       = "status"
+)
+
 var (
 	// httpRequestDuration tracks HTTP request duration in seconds
 	httpRequestDuration = promauto.NewHistogramVec(
@@ -17,7 +23,7 @@ var (
 			Help:    "HTTP request duration in seconds",
 			Buckets: prometheus.DefBuckets,
 		},
-		[]string{"method", "path_template", "status"},
+		[]string{labelMethod, labelPathTemplate, labelStatus},
 	)
 
 	// httpRequestsTotal tracks total HTTP requests
@@ -26,7 +32,7 @@ var (
 			Name: "http_requests_total",
 			Help: "Total number of HTTP requests",
 		},
-		[]string{"method", "path_template", "status"},
+		[]string{labelMethod, labelPathTemplate, labelStatus},
 	)
 )
 
