@@ -10,6 +10,7 @@ jobs:
     uses: tempest-concorde/fw-cicd/.github/workflows/semantic-release.yml@main
     with:
       use_local_config: false
+    secrets: inherit
 
   build:
     name: Build and push container
