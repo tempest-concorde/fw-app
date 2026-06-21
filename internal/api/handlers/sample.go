@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	keyError         = "error"
-	msgInvalidID     = "invalid ID"
+	keyError          = "error"
+	msgInvalidID      = "invalid ID"
 	msgSampleNotFound = "sample not found"
 )
 
