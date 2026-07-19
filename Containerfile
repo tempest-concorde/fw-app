@@ -34,5 +34,9 @@ EXPOSE 8080
 # Volume for audit logs
 VOLUME /var/log/fw-app
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["/usr/local/bin/fw-app", "--health-check"]
+
 # Entrypoint
 ENTRYPOINT ["/usr/local/bin/fw-app"]
