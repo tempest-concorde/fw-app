@@ -36,3 +36,7 @@ VOLUME /var/log/fw-app
 
 # Entrypoint
 ENTRYPOINT ["/usr/local/bin/fw-app"]
+
+# Health check — ensures container is serving
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["/usr/local/bin/fw-app", "--health-check"] || exit 1
