@@ -20,8 +20,22 @@ type Config struct {
 
 // ServerConfig holds HTTP server settings
 type ServerConfig struct {
-	Host string
-	Port int
+	Host         string
+	Port         int
+	FQDNMetaFile string `mapstructure:"fqdn_meta_file"`
+}
+
+// EffectivePort returns the port the server should listen on. When TLS is
+// enabled the container serves on 8443 (host publishes 443 -> 8443); otherwise
+// it falls back to the plain 8080. An explicit FW_SERVER_PORT always wins.
+func (s ServerConfig) EffectivePort(tlsEnabled bool) int {
+	if s.Port != 0 && s.Port != 8080 {
+		return s.Port
+	}
+	if tlsEnabled {
+		return 8443
+	}
+	return 8080
 }
 
 // AuthConfig holds authentication settings
@@ -58,11 +72,41 @@ type SwaggerConfig struct {
 
 // Load loads configuration from environment variables, config file, and defaults
 func Load(cfgFile string) (*Config, error) {
+	cfg, err := load(cfgFile)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate required fields
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
+// LoadHealthcheck loads configuration without requiring application secrets.
+// The healthcheck subcommand only needs TLS + FQDN + port to probe /health and
+// must be able to run even before the full secret set is provisioned.
+func LoadHealthcheck(cfgFile string) (*Config, error) {
+	cfg, err := load(cfgFile)
+	if err != nil {
+		return nil, err
+	}
+
+	if cfg.TLS.Enabled && (cfg.TLS.CertFile == "" || cfg.TLS.KeyFile == "") {
+		return nil, fmt.Errorf("tls.cert_file and tls.key_file are required when tls.enabled is true")
+	}
+	return cfg, nil
+}
+
+func load(cfgFile string) (*Config, error) {
 	v := viper.New()
 
 	// Set defaults
 	v.SetDefault("server.host", "0.0.0.0")
 	v.SetDefault("server.port", 8080)
+	v.SetDefault("server.fqdn_meta_file", "/run/fw-app/meta/fqdn")
 	v.SetDefault("auth.session_max_age", 24*time.Hour)
 	v.SetDefault("database.path", "./fw-app.db")
 	v.SetDefault("tls.enabled", true)
@@ -85,6 +129,7 @@ func Load(cfgFile string) (*Config, error) {
 	_ = v.BindEnv("auth.session_max_age")
 	_ = v.BindEnv("server.host")
 	_ = v.BindEnv("server.port")
+	_ = v.BindEnv("server.fqdn_meta_file")
 	_ = v.BindEnv("database.path")
 	_ = v.BindEnv("tls.enabled")
 	_ = v.BindEnv("tls.cert_file")

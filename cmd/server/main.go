@@ -9,7 +9,7 @@ import (
 // @title Flight Wall API
 // @version 1.0
 // @description REST API for Flight Wall LED display system
-// @host localhost:8080
+// @host localhost:8443
 // @BasePath /api
 
 // @tag.name auth
@@ -42,6 +42,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&logFormat, "log-format", "json", "log format (json, text)")
 
 	rootCmd.AddCommand(serveCmd)
+	rootCmd.AddCommand(healthcheckCmd)
 }
 
 func main() {
