@@ -38,9 +38,8 @@ func runHealthcheck(cmd *cobra.Command, args []string) error {
 	}
 
 	port := cfg.Server.EffectivePort(cfg.TLS.Enabled)
-	url := fmt.Sprintf("https://%s:%d/health", fqdn, port)
 
-	client, err := healthClient(cfg)
+	client, err := healthClient(cfg, fqdn, port)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "healthcheck: %v\n", err)
 		return err
@@ -48,6 +47,12 @@ func runHealthcheck(cmd *cobra.Command, args []string) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
+	// Use the FQDN in the URL solely to drive hostname (ServerName) verification
+	// of the served certificate. The dialer below always connects to the
+	// loopback publish address, since the container is only exposed on
+	// 127.0.0.1:443 -> 8443 (not on the tailnet IP).
+	url := fmt.Sprintf("https://%s:%d/health", fqdn, port)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -100,7 +105,11 @@ func readFQDN(path string) (string, error) {
 // TLS handshake additionally verifies that ServerName matches the FQDN. This
 // is a self-check: it fails if the served cert differs from the configured
 // one or is not valid for the FQDN.
-func healthClient(cfg *config.Config) (*http.Client, error) {
+//
+// The dialer always connects to 127.0.0.1:<port> (the loopback publish address)
+// even though the URL host is the FQDN — the FQDN only drives ServerName
+// verification, since the container is not reachable on its tailnet IP.
+func healthClient(cfg *config.Config, fqdn string, port int) (*http.Client, error) {
 	tlsConfig := &tls.Config{
 		MinVersion: tls.VersionTLS12,
 	}
@@ -120,10 +129,15 @@ func healthClient(cfg *config.Config) (*http.Client, error) {
 	}
 
 	transport := &http.Transport{
-		TLSClientConfig: tlsConfig,
-		DialContext: (&net.Dialer{
-			Timeout: 3 * time.Second,
-		}).DialContext,
+		ForceAttemptHTTP2:   false,
+		TLSClientConfig:     tlsConfig,
+		TLSHandshakeTimeout: 3 * time.Second,
+		DialContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
+			// Dial loopback regardless of the URL host (which is the FQDN).
+			addr := fmt.Sprintf("127.0.0.1:%d", port)
+			var d net.Dialer
+			return d.DialContext(ctx, network, addr)
+		},
 	}
 
 	return &http.Client{Transport: transport}, nil
