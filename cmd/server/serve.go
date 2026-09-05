@@ -130,7 +130,7 @@ func runServeMain() error {
 	// Create HTTP server
 	srv, err := server.NewServer(server.Config{
 		Host:        cfg.Server.Host,
-		Port:        cfg.Server.Port,
+		Port:        cfg.Server.EffectivePort(cfg.TLS.Enabled),
 		Handler:     router,
 		TLSEnabled:  cfg.TLS.Enabled,
 		TLSCertFile: cfg.TLS.CertFile,
@@ -145,7 +145,7 @@ func runServeMain() error {
 	go func() {
 		logger.Info("starting HTTP server",
 			"host", cfg.Server.Host,
-			"port", cfg.Server.Port,
+			"port", cfg.Server.EffectivePort(cfg.TLS.Enabled),
 			"tls_enabled", cfg.TLS.Enabled,
 		)
 		serverErrors <- srv.Start()

@@ -277,3 +277,39 @@ func containsImpl(s, substr string) bool {
 	}
 	return false
 }
+
+func TestEffectivePort(t *testing.T) {
+	tests := []struct {
+		name       string
+		port       int
+		tlsEnabled bool
+		want       int
+	}{
+		{"default tls on", 8080, true, 8443},
+		{"default tls off", 8080, false, 8080},
+		{"explicit override tls on", 9090, true, 9090},
+		{"explicit override tls off", 9090, false, 9090},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := ServerConfig{Port: tt.port}
+			if got := s.EffectivePort(tt.tlsEnabled); got != tt.want {
+				t.Errorf("EffectivePort(%d, %v) = %d, want %d", tt.port, tt.tlsEnabled, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLoadHealthcheck_DoesNotRequireAuthSecrets(t *testing.T) {
+	// Only TLS is disabled; no auth env vars set — LoadHealthcheck must succeed.
+	setEnv(t, "FW_TLS_ENABLED", "false")
+	setEnv(t, "FW_SERVER_PORT", "8443")
+
+	cfg, err := LoadHealthcheck("")
+	if err != nil {
+		t.Fatalf("LoadHealthcheck should not require auth secrets, got: %v", err)
+	}
+	if cfg.Server.EffectivePort(cfg.TLS.Enabled) != 8443 {
+		t.Errorf("EffectivePort = %d, want 8443", cfg.Server.EffectivePort(cfg.TLS.Enabled))
+	}
+}
