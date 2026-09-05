@@ -1,7 +1,8 @@
 # Flight Wall Application - Multi-stage Go Build
 
 # Build stage - Red Hat Hardened Go builder
-FROM registry.access.redhat.com/hi/go:latest AS builder
+# Pin to Go 1.27 stream tag + SHA256 digest (Go 1.27.0, resolves to `latest`)
+FROM registry.access.redhat.com/hi/go:1.27@sha256:7f767edb96945cef41fdd678e67bb014ba00a9d19ceb2d9e56b33d4ae9a33b45 AS builder
 
 WORKDIR /src
 
@@ -16,7 +17,8 @@ COPY . .
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /tmp/fw-app ./cmd/server
 
 # Runtime stage - Red Hat Hardened static (for CGO_ENABLED=0 binaries)
-FROM registry.access.redhat.com/hi/static:latest
+# Pinned to SHA256 digest of the floating `latest` tag
+FROM registry.access.redhat.com/hi/static:latest@sha256:41595122bb70793cd58c9e22f625b5c557e4459c43235cbca5c117d057a11424
 
 # Metadata
 LABEL org.opencontainers.image.title="Flight Wall Application"
