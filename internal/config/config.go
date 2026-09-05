@@ -156,11 +156,6 @@ func load(cfgFile string) (*Config, error) {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
-	// Validate required fields
-	if err := cfg.Validate(); err != nil {
-		return nil, err
-	}
-
 	return &cfg, nil
 }
 
