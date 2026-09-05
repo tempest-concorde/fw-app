@@ -39,7 +39,7 @@ func runHealthcheck(cmd *cobra.Command, args []string) error {
 
 	port := cfg.Server.EffectivePort(cfg.TLS.Enabled)
 
-	client, err := healthClient(cfg, fqdn, port)
+	client, err := healthClient(cfg, port)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "healthcheck: %v\n", err)
 		return err
@@ -102,14 +102,15 @@ func readFQDN(path string) (string, error) {
 // healthClient builds an HTTP client that verifies the served certificate
 // against the app's own configured cert/key for the Tailscale FQDN. The leaf
 // of the configured cert is used as the trust anchor (direct trust), and the
-// TLS handshake additionally verifies that ServerName matches the FQDN. This
-// is a self-check: it fails if the served cert differs from the configured
-// one or is not valid for the FQDN.
+// TLS handshake additionally verifies that ServerName matches the FQDN (the
+// FQDN comes from the request URL host). This is a self-check: it fails if
+// the served cert differs from the configured one or is not valid for the
+// FQDN.
 //
 // The dialer always connects to 127.0.0.1:<port> (the loopback publish address)
 // even though the URL host is the FQDN — the FQDN only drives ServerName
 // verification, since the container is not reachable on its tailnet IP.
-func healthClient(cfg *config.Config, fqdn string, port int) (*http.Client, error) {
+func healthClient(cfg *config.Config, port int) (*http.Client, error) {
 	tlsConfig := &tls.Config{
 		MinVersion: tls.VersionTLS12,
 	}
