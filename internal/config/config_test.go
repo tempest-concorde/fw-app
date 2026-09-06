@@ -313,3 +313,24 @@ func TestLoadHealthcheck_DoesNotRequireAuthSecrets(t *testing.T) {
 		t.Errorf("EffectivePort = %d, want 8443", cfg.Server.EffectivePort(cfg.TLS.Enabled))
 	}
 }
+
+func TestLoadHealthcheck_UsesDeploymentFQDNForTLS(t *testing.T) {
+	setEnv(t, "FW_TLS_ENABLED", "true")
+	setEnv(t, "FW_SERVER_FQDN", "fw.story-beta.ts.net")
+
+	cfg, err := LoadHealthcheck("")
+	if err != nil {
+		t.Fatalf("LoadHealthcheck with FQDN should succeed, got: %v", err)
+	}
+	if cfg.Server.FQDN != "fw.story-beta.ts.net" {
+		t.Errorf("Server.FQDN = %q, want %q", cfg.Server.FQDN, "fw.story-beta.ts.net")
+	}
+}
+
+func TestLoadHealthcheck_TLSRequiresFQDN(t *testing.T) {
+	setEnv(t, "FW_TLS_ENABLED", "true")
+
+	if _, err := LoadHealthcheck(""); err == nil {
+		t.Fatal("LoadHealthcheck should require FW_SERVER_FQDN when TLS is enabled")
+	}
+}
