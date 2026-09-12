@@ -2,7 +2,7 @@
 
 # Build stage - Red Hat Hardened Go builder
 # Pin to Go 1.27 stream tag + SHA256 digest (Go 1.27.0, resolves to `latest`)
-FROM registry.access.redhat.com/hi/go:1.27@sha256:7f767edb96945cef41fdd678e67bb014ba00a9d19ceb2d9e56b33d4ae9a33b45 AS builder
+FROM registry.access.redhat.com/hi/go:1.27@sha256:71819dc583899f5a4210c1697c7281a62f0c4bbd40db3e38536f212a724308c6 AS builder
 
 WORKDIR /src
 
