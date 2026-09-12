@@ -31,11 +31,7 @@ func runHealthcheck(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fqdn, err := readFQDN(cfg.Server.FQDNMetaFile)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "healthcheck: %v\n", err)
-		return err
-	}
+	fqdn := cfg.Server.FQDN
 
 	port := cfg.Server.EffectivePort(cfg.TLS.Enabled)
 
@@ -84,19 +80,6 @@ func runHealthcheck(cmd *cobra.Command, args []string) error {
 
 	fmt.Println("healthcheck: ok")
 	return nil
-}
-
-// readFQDN reads the Tailscale DNSName from the meta file written by the host.
-func readFQDN(path string) (string, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return "", fmt.Errorf("read FQDN meta file %s: %w", path, err)
-	}
-	fqdn := strings.TrimSpace(string(data))
-	if fqdn == "" {
-		return "", fmt.Errorf("FQDN meta file %s is empty", path)
-	}
-	return fqdn, nil
 }
 
 // healthClient builds an HTTP client that verifies the served certificate

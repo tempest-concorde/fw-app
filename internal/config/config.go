@@ -20,9 +20,9 @@ type Config struct {
 
 // ServerConfig holds HTTP server settings
 type ServerConfig struct {
-	Host         string
-	Port         int
-	FQDNMetaFile string `mapstructure:"fqdn_meta_file"`
+	Host string
+	Port int
+	FQDN string `mapstructure:"fqdn"`
 }
 
 // EffectivePort returns the port the server should listen on. When TLS is
@@ -97,6 +97,9 @@ func LoadHealthcheck(cfgFile string) (*Config, error) {
 	if cfg.TLS.Enabled && (cfg.TLS.CertFile == "" || cfg.TLS.KeyFile == "") {
 		return nil, fmt.Errorf("tls.cert_file and tls.key_file are required when tls.enabled is true")
 	}
+	if cfg.TLS.Enabled && cfg.Server.FQDN == "" {
+		return nil, fmt.Errorf("server.fqdn is required when tls.enabled is true (set FW_SERVER_FQDN)")
+	}
 	return cfg, nil
 }
 
@@ -106,7 +109,6 @@ func load(cfgFile string) (*Config, error) {
 	// Set defaults
 	v.SetDefault("server.host", "0.0.0.0")
 	v.SetDefault("server.port", 8080)
-	v.SetDefault("server.fqdn_meta_file", "/run/fw-app/meta/fqdn")
 	v.SetDefault("auth.session_max_age", 24*time.Hour)
 	v.SetDefault("database.path", "./fw-app.db")
 	v.SetDefault("tls.enabled", true)
@@ -129,7 +131,7 @@ func load(cfgFile string) (*Config, error) {
 	_ = v.BindEnv("auth.session_max_age")
 	_ = v.BindEnv("server.host")
 	_ = v.BindEnv("server.port")
-	_ = v.BindEnv("server.fqdn_meta_file")
+	_ = v.BindEnv("server.fqdn")
 	_ = v.BindEnv("database.path")
 	_ = v.BindEnv("tls.enabled")
 	_ = v.BindEnv("tls.cert_file")
