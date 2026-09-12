@@ -24,6 +24,8 @@ jobs:
       containerfile: Containerfile
       push: true
       tags: ${{ needs.release.outputs.new_release_version }} latest
+      version: ${{ needs.release.outputs.new_release_version }}
+      is_release: true
     secrets: inherit
 
   sign:
@@ -38,3 +40,33 @@ jobs:
       version: ${{ needs.release.outputs.new_release_version }}
       signing_mode: key
     secrets: inherit
+
+  dispatch:
+    name: Trigger fw-os update
+    needs: [release, build, sign]
+    if: needs.release.outputs.new_release_published == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          owner: tempest-concorde
+          repositories: fw-os
+
+      - name: Dispatch fw-app-released to fw-os
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          gh api repos/tempest-concorde/fw-os/dispatches \
+            --method POST \
+            --field event_type=fw-app-released \
+            --field 'client_payload[version]=${{ needs.release.outputs.new_release_version }}' \
+            --field 'client_payload[digest]=${{ needs.build.outputs.digest }}' \
+            --field 'client_payload[registry]=ghcr.io' \
+            --field 'client_payload[image]=tempest-concorde/fw-app' \
+            --field 'client_payload[run_url]=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          echo "✅ Dispatched fw-app-released (v${{ needs.release.outputs.new_release_version }}) to fw-os"
