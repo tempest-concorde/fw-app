@@ -1,0 +1,9 @@
+.git
+.gitignore
+node_modules/
+web/node_modules/
+web/dist/
+coverage.txt
+*.log
+.env*
+fw-app

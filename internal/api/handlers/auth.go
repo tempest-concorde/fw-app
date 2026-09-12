@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -68,25 +69,25 @@ type CallbackRequest struct {
 func (h *AuthHandler) Callback(c *gin.Context) {
 	var req CallbackRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{keyError: "missing code or state"})
+		c.Redirect(http.StatusFound, "/login?error=invalid_state")
 		return
 	}
 
 	storedState, err := c.Cookie("oauth_state")
 	if err != nil || storedState != req.State {
-		c.JSON(http.StatusUnauthorized, gin.H{keyError: "invalid state parameter"})
+		c.Redirect(http.StatusFound, "/login?error=invalid_state")
 		return
 	}
 
 	user, err := h.githubAuth.HandleCallback(c.Request.Context(), req.Code)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{keyError: "authentication failed"})
+		c.Redirect(http.StatusFound, "/login?error="+authErrorCode(err))
 		return
 	}
 
 	token, err := h.jwtManager.GenerateToken(user.Login, user.Login, user.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{keyError: "failed to generate token"})
+		c.Redirect(http.StatusFound, "/login?error=auth_failed")
 		return
 	}
 
@@ -105,6 +106,47 @@ func (h *AuthHandler) Callback(c *gin.Context) {
 	c.SetCookie("oauth_state", "", -1, "/", "", true, true)
 
 	c.Redirect(http.StatusFound, "/app")
+}
+
+// authErrorCode maps a GitHub auth error to a frontend-facing error code used
+// by the /login?error=<code> failure screen.
+func authErrorCode(err error) string {
+	switch {
+	case errors.Is(err, auth.ErrNotMember):
+		return "not_member"
+	case errors.Is(err, auth.ErrConfig):
+		return "config_error"
+	default:
+		return "auth_failed"
+	}
+}
+
+// Me godoc
+// @Summary Current user
+// @Description Returns the authenticated user's identity from the session
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]string
+// @Router /auth/me [get]
+func (h *AuthHandler) Me(c *gin.Context) {
+	cookie, err := c.Cookie("fw-session")
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{keyError: "unauthenticated"})
+		return
+	}
+
+	claims, err := h.jwtManager.ValidateToken(cookie)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{keyError: "unauthenticated"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"login":   claims.Login,
+		"user_id": claims.UserID,
+	})
 }
 
 // Logout godoc

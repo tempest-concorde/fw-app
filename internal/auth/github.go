@@ -4,11 +4,27 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 
 	"github.com/google/go-github/v69/github"
 	"golang.org/x/oauth2"
 	githuboauth "golang.org/x/oauth2/github"
+)
+
+// Sentinel errors returned by HandleCallback so callers can distinguish
+// non-membership from upstream GitHub failures and missing configuration.
+var (
+	// ErrNotMember indicates the authenticated user is not a member of the
+	// configured organization.
+	ErrNotMember = errors.New("user is not a member of the configured organization")
+
+	// ErrAuthFailed indicates GitHub rejected the code exchange or the user
+	// lookup failed.
+	ErrAuthFailed = errors.New("github authentication failed")
+
+	// ErrConfig indicates the organization is not configured.
+	ErrConfig = errors.New("github organization is not configured")
 )
 
 // GitHubUser represents an authenticated GitHub user
@@ -48,10 +64,15 @@ func (g *GitHubAuth) StartLogin() (state, redirectURL string) {
 
 // HandleCallback exchanges the OAuth code for a token and validates org membership
 func (g *GitHubAuth) HandleCallback(ctx context.Context, code string) (*GitHubUser, error) {
+	// Fail closed if the organization is not configured.
+	if g.ghOrg == "" {
+		return nil, ErrConfig
+	}
+
 	// Exchange code for token
 	token, err := g.oauthConfig.Exchange(ctx, code)
 	if err != nil {
-		return nil, fmt.Errorf("failed to exchange code: %w", err)
+		return nil, fmt.Errorf("%w: failed to exchange code: %v", ErrAuthFailed, err)
 	}
 
 	// Create GitHub client
@@ -60,16 +81,17 @@ func (g *GitHubAuth) HandleCallback(ctx context.Context, code string) (*GitHubUs
 	// Get user info
 	user, _, err := client.Users.Get(ctx, "")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
+		return nil, fmt.Errorf("%w: failed to get user: %v", ErrAuthFailed, err)
 	}
 
 	// Check org membership
 	isMember, _, err := client.Organizations.IsMember(ctx, g.ghOrg, user.GetLogin())
 	if err != nil {
-		return nil, fmt.Errorf("failed to check org membership: %w", err)
+		return nil, fmt.Errorf("%w: failed to check org membership: %v", ErrAuthFailed, err)
 	}
 	if !isMember {
-		return nil, fmt.Errorf("user %s is not a member of organization %s", user.GetLogin(), g.ghOrg)
+		return nil, fmt.Errorf("%w: user %s is not a member of organization %s",
+			ErrNotMember, user.GetLogin(), g.ghOrg)
 	}
 
 	// Get user email

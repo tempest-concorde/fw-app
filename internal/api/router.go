@@ -2,6 +2,8 @@ package api
 
 import (
 	"log/slog"
+	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -10,6 +12,7 @@ import (
 	"github.com/tempest-concorde/fw-app/internal/audit"
 	"github.com/tempest-concorde/fw-app/internal/auth"
 	"github.com/tempest-concorde/fw-app/internal/storage"
+	"github.com/tempest-concorde/fw-app/web"
 )
 
 // RouterConfig contains all dependencies for router setup
@@ -33,11 +36,6 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 	r.Use(middleware.Metrics())
 	r.Use(gin.Recovery())
 
-	// Static files
-	r.Static("/static", "./web/static")
-	r.StaticFile("/", "./web/static/index.html")
-	r.StaticFile("/app", "./web/static/app.html")
-
 	// Health endpoints (no auth)
 	healthHandler := handlers.NewHealthHandler(cfg.DB.DB)
 	r.GET("/health", healthHandler.Health)
@@ -52,6 +50,7 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 	{
 		authGroup.GET("/login", authHandler.Login)
 		authGroup.GET("/callback", authHandler.Callback)
+		authGroup.GET("/me", authHandler.Me)
 		authGroup.POST("/logout", authHandler.Logout)
 	}
 
@@ -67,6 +66,21 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 		apiGroup.PUT("/samples/:id", sampleHandler.UpdateSample)
 		apiGroup.DELETE("/samples/:id", sampleHandler.DeleteSample)
 	}
+
+	// Single-page-app fallback: serve the embedded frontend for any path that
+	// is not an API/auth/observability route, so client routes (/app, /login)
+	// resolve to the React app.
+	spaHandler := web.Handler()
+	r.NoRoute(func(c *gin.Context) {
+		p := c.Request.URL.Path
+		if strings.HasPrefix(p, "/api/") ||
+			strings.HasPrefix(p, "/auth/") ||
+			p == "/health" || p == "/readyz" || p == "/metrics" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			return
+		}
+		spaHandler.ServeHTTP(c.Writer, c.Request)
+	})
 
 	return r
 }

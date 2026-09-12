@@ -1,4 +1,4 @@
-.PHONY: help build test test-integration lint lint-fix fmt-check run run-dev clean swagger swagger-check verify
+.PHONY: help build test test-integration lint lint-fix fmt-check run run-dev clean swagger swagger-check verify web
 
 # Variables
 BINARY_NAME=fw-app
@@ -20,6 +20,7 @@ help:
 	@echo "  verify           Run all verification checks (fmt-check + lint + swagger-check)"
 	@echo "  swagger          Generate Swagger documentation"
 	@echo "  swagger-check    Verify Swagger docs are up to date"
+	@echo "  web              Build the embedded frontend (web/dist)"
 	@echo "  run              Run the application locally"
 	@echo "  run-dev          Run the application with debug logging"
 	@echo "  clean            Remove build artifacts"
@@ -46,10 +47,15 @@ fmt-check:
 verify: fmt-check lint swagger-check
 	@echo "✅ All verification checks passed"
 
-build: swagger
+build: swagger web
 	@echo "Building $(BINARY_NAME)..."
 	CGO_ENABLED=0 $(GO) build -o $(BINARY_NAME) $(MAIN_PATH)
 	@echo "✅ Built: $(BINARY_NAME)"
+
+web:
+	@echo "Building frontend..."
+	cd web && npm ci && npm run build
+	@echo "✅ Frontend built"
 
 test:
 	@echo "Running unit tests..."
