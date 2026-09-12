@@ -72,7 +72,7 @@ func (g *GitHubAuth) HandleCallback(ctx context.Context, code string) (*GitHubUs
 	// Exchange code for token
 	token, err := g.oauthConfig.Exchange(ctx, code)
 	if err != nil {
-		return nil, fmt.Errorf("%w: failed to exchange code: %v", ErrAuthFailed, err)
+		return nil, fmt.Errorf("%w: failed to exchange code: %w", ErrAuthFailed, err)
 	}
 
 	// Create GitHub client
@@ -81,13 +81,13 @@ func (g *GitHubAuth) HandleCallback(ctx context.Context, code string) (*GitHubUs
 	// Get user info
 	user, _, err := client.Users.Get(ctx, "")
 	if err != nil {
-		return nil, fmt.Errorf("%w: failed to get user: %v", ErrAuthFailed, err)
+		return nil, fmt.Errorf("%w: failed to get user: %w", ErrAuthFailed, err)
 	}
 
 	// Check org membership
 	isMember, _, err := client.Organizations.IsMember(ctx, g.ghOrg, user.GetLogin())
 	if err != nil {
-		return nil, fmt.Errorf("%w: failed to check org membership: %v", ErrAuthFailed, err)
+		return nil, fmt.Errorf("%w: failed to check org membership: %w", ErrAuthFailed, err)
 	}
 	if !isMember {
 		return nil, fmt.Errorf("%w: user %s is not a member of organization %s",
