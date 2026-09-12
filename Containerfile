@@ -1,5 +1,13 @@
 # Flight Wall Application - Multi-stage Go Build
 
+# Frontend build stage - React + PatternFly single-page app (ephemeral, not shipped)
+FROM docker.io/library/node:20-alpine AS webbuild
+WORKDIR /web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/ ./
+RUN npm run build
+
 # Build stage - Red Hat Hardened Go builder
 # Pin to Go 1.27 stream tag + SHA256 digest (Go 1.27.0, resolves to `latest`)
 FROM registry.access.redhat.com/hi/go:1.27@sha256:71819dc583899f5a4210c1697c7281a62f0c4bbd40db3e38536f212a724308c6 AS builder
@@ -12,6 +20,9 @@ RUN go mod download
 
 # Copy source code
 COPY . .
+
+# Embed the built frontend into the Go binary via //go:embed
+COPY --from=webbuild /web/dist ./web/dist
 
 # Build with CGO disabled (using pure Go modernc.org/sqlite)
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /tmp/fw-app ./cmd/server

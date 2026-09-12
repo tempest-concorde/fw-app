@@ -9,7 +9,7 @@ Go application for the Flight Wall LED display system - REST API, LED control, a
 - **Multiple Display Modes** - Nearby flights, track specific flight, images, text, test patterns
 - **REST API** - Full API for remote control and monitoring
 - **GitHub OAuth** - Authentication via GitHub organization membership
-- **Embedded Web UI** - Svelte-based UI compiled and embedded via `//go:embed`
+- **Embedded Web UI** - React + PatternFly single-page app (sign-in, success/failure screens) built with Vite and embedded via `//go:embed`
 - **Prometheus Metrics** - `/metrics` endpoint for observability
 - **SQLite Storage** - Lightweight database for settings and schedules
 
@@ -25,7 +25,7 @@ fw-app/
 │   ├── storage/          # SQLite database
 │   ├── auth/             # GitHub OAuth + org membership check
 │   └── config/           # Configuration from env + secrets
-├── ui/                   # Svelte web UI (embedded via go:embed)
+├── web/                  # React + PatternFly web UI (embedded via go:embed)
 └── Containerfile         # Multi-stage build (Red Hat Hardened Images)
 ```
 
@@ -73,19 +73,35 @@ LED_TILE_W=16 LED_TILE_H=16 LED_TILES_X=10 LED_TILES_Y=2
 - **JWT Sessions** - 24h TTL, httpOnly/Secure/SameSite=Strict cookies
 - **Tailnet-only** - Served exclusively on Tailscale VPN (no public exposure)
 
+### Auth endpoints
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/auth/login` | No | Redirect to GitHub OAuth |
+| GET | `/auth/callback` | No | OAuth callback (redirects to `/app` or `/login?error=<code>`) |
+| GET | `/auth/me` | Cookie | Current user (`{ "login", "user_id" }`) or 401 |
+| POST | `/auth/logout` | No | Clear session cookie |
+
+Failure `error` codes: `invalid_state`, `auth_failed`, `not_member`, `config_error`.
+
 ## Development
 
 ### Prerequisites
 
-- Go 1.23+
+- Go 1.25+
+- Node 20+ and npm (for the embedded frontend)
 - For LED testing: Raspberry Pi 4 with /dev/gpiomem access
 - For local dev without hardware: LED renderer has simulator mode
 
 ### Build
 
 ```bash
-make build
+make build          # Builds frontend (web/dist) + Go binary
+make web            # Build the frontend only
 ```
+
+The frontend lives in `web/` (React + PatternFly). Build it with `npm ci && npm run build`
+inside `web/`; the output (`web/dist`) is embedded into the Go binary via `//go:embed`.
 
 ### Test
 
