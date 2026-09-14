@@ -1,7 +1,7 @@
 # Flight Wall Application - Multi-stage Go Build
 
 # Frontend build stage - React + PatternFly single-page app (ephemeral, not shipped)
-FROM docker.io/library/node:20-alpine AS webbuild
+FROM docker.io/library/node:26-alpine AS webbuild
 WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
@@ -10,7 +10,7 @@ RUN npm run build
 
 # Build stage - Red Hat Hardened Go builder
 # Pin to Go 1.27 stream tag + SHA256 digest (Go 1.27.0, resolves to `latest`)
-FROM registry.access.redhat.com/hi/go:1.27@sha256:71819dc583899f5a4210c1697c7281a62f0c4bbd40db3e38536f212a724308c6 AS builder
+FROM registry.access.redhat.com/hi/go:1.27@sha256:666e77358fcda912f3251bc1651dc1908ea1d6e49c0eab43b0aacef272d187dc AS builder
 
 WORKDIR /src
 
@@ -29,7 +29,7 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /tmp/fw-app ./cmd/server
 
 # Runtime stage - Red Hat Hardened static (for CGO_ENABLED=0 binaries)
 # Pinned to SHA256 digest of the floating `latest` tag
-FROM registry.access.redhat.com/hi/static:latest@sha256:41595122bb70793cd58c9e22f625b5c557e4459c43235cbca5c117d057a11424
+FROM registry.access.redhat.com/hi/static:latest@sha256:20f419d12511f96524d9b9bb092ef5066d6bacee7ed45d7c528bef62f6d48f74
 
 # Metadata
 LABEL org.opencontainers.image.title="Flight Wall Application"
