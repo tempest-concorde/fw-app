@@ -1,8 +1,13 @@
 # Flight Wall Application - Multi-stage Go Build
 
 # Frontend build stage - React + PatternFly single-page app (ephemeral, not shipped)
-FROM docker.io/library/node:20-alpine AS webbuild
-WORKDIR /web
+# Red Hat certified ubi9/nodejs-20, digest-pinned (T011; fw-gsd
+# specs/004-fedora-version-alignment FR-011→FR-012: no hardened `hi/node` base
+# exists, so the certified tier is the constitution-compliant substitute).
+# UBI nodejs images expect /opt/app-root/src as the app workdir and run as a
+# non-root user (uid 1001) by default — no USER root, no chown plumbing.
+FROM registry.access.redhat.com/ubi9/nodejs-20:1-1758500456@sha256:062a228a2904c54638f77406c5d45489cdf82b52f541f42d590fdf11c3e1f883 AS webbuild
+WORKDIR /opt/app-root/src
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
 COPY web/ ./
@@ -22,7 +27,8 @@ RUN go mod download
 COPY . .
 
 # Embed the built frontend into the Go binary via //go:embed
-COPY --from=webbuild /web/dist ./web/dist
+# Path matches the webbuild stage workdir (/opt/app-root/src) on ubi9/nodejs-20.
+COPY --from=webbuild /opt/app-root/src/dist ./web/dist
 
 # Build with CGO disabled (using pure Go modernc.org/sqlite)
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /tmp/fw-app ./cmd/server
