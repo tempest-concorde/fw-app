@@ -35,3 +35,12 @@ jobs:
       containerfile: Containerfile
       push: false
     secrets: inherit
+
+  # fw-gsd specs/004-fedora-version-alignment (T018): constitution gate.
+  # NOTE: this job WILL FAIL until tempest-concorde/fw-cicd merges
+  # baseline-audit.yml to main (deliberate W4a-first wave ordering).
+  baseline-audit:
+    name: Baseline audit (Fedora 46 baseline)
+    uses: tempest-concorde/fw-cicd/.github/workflows/baseline-audit.yml@main
+    with:
+      baseline: "46"
