@@ -1,7 +1,7 @@
 # Flight Wall Application - Multi-stage Go Build
 
 # Frontend build stage - React + PatternFly single-page app (ephemeral, not shipped)
-FROM docker.io/library/node:20-alpine AS webbuild
+FROM docker.io/library/node:26-alpine AS webbuild
 WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
