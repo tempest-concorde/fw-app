@@ -6,7 +6,7 @@
 # exists, so the certified tier is the constitution-compliant substitute).
 # UBI nodejs images expect /opt/app-root/src as the app workdir and run as a
 # non-root user (uid 1001) by default — no USER root, no chown plumbing.
-FROM registry.access.redhat.com/ubi9/nodejs-20:1-1758500456@sha256:062a228a2904c54638f77406c5d45489cdf82b52f541f42d590fdf11c3e1f883 AS webbuild
+FROM registry.access.redhat.com/ubi9/nodejs-20:9.7-1778648167@sha256:74cc7b1d13592b1e425074f434b90e470ab209da85fd1fdb8e6e9e4cabaec51a AS webbuild
 WORKDIR /opt/app-root/src
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
@@ -15,7 +15,7 @@ RUN npm run build
 
 # Build stage - Red Hat Hardened Go builder
 # Pin to Go 1.27 stream tag + SHA256 digest (Go 1.27.0, resolves to `latest`)
-FROM registry.access.redhat.com/hi/go:1.27@sha256:71819dc583899f5a4210c1697c7281a62f0c4bbd40db3e38536f212a724308c6 AS builder
+FROM registry.access.redhat.com/hi/go:1.27@sha256:59cb66f4271f15509f4d3ae13f6e88837edc70411082e866198f9d5cbcdcc66c AS builder
 
 WORKDIR /src
 
@@ -35,7 +35,7 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /tmp/fw-app ./cmd/server
 
 # Runtime stage - Red Hat Hardened static (for CGO_ENABLED=0 binaries)
 # Pinned to SHA256 digest of the floating `latest` tag
-FROM registry.access.redhat.com/hi/static:latest@sha256:41595122bb70793cd58c9e22f625b5c557e4459c43235cbca5c117d057a11424
+FROM registry.access.redhat.com/hi/static:latest@sha256:85fafe17d51d330089d4f39a9716bcc0eacfbda0c15ecb39f669cbfcd815ff8b
 
 # Metadata
 LABEL org.opencontainers.image.title="Flight Wall Application"
