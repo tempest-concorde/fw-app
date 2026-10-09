@@ -44,7 +44,7 @@ func New(cfg Config) (*DB, error) {
 
 	// Add query logging in development mode
 	if cfg.Development {
-		db.AddQueryHook(bundebug.NewQueryHook(
+		db = db.WithQueryHook(bundebug.NewQueryHook(
 			bundebug.WithVerbose(true),
 			bundebug.FromEnv("BUNDEBUG"),
 		))
