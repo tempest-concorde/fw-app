@@ -15,7 +15,7 @@ RUN npm run build
 
 # Build stage - Red Hat Hardened Go builder
 # Pin to Go 1.27 stream tag + SHA256 digest (Go 1.27.0, resolves to `latest`)
-FROM registry.access.redhat.com/hi/go:1.27@sha256:59cb66f4271f15509f4d3ae13f6e88837edc70411082e866198f9d5cbcdcc66c AS builder
+FROM registry.access.redhat.com/hi/go:1.27@sha256:cef6cd0158f837223150bd2ecb0e38e9cd98875f60f71127d943fd6d73223f8a AS builder
 
 WORKDIR /src
 
